@@ -80,7 +80,7 @@ class ComponentWithExpectedRequirementSet(xstack.Component):
     def __init__(self, *args, **kwargs):
         super(ComponentWithExpectedRequirementSet, self).__init__(*args, **kwargs)
 
-        self.declare_requirement(
+        self.declare_input(
             name="expected_requirement",
             value=1,
         )
@@ -91,7 +91,7 @@ class ComponentWithExpectedRequirementNotSet(xstack.Component):
     def __init__(self, *args, **kwargs):
         super(ComponentWithExpectedRequirementNotSet, self).__init__(*args, **kwargs)
 
-        self.declare_requirement(
+        self.declare_input(
             name="expected_requirement",
             value=None,
             validate=True,

@@ -1,4 +1,4 @@
-import qute
+from .vendor import qute
 
 from . import options
 
@@ -10,7 +10,7 @@ class AddComponentWidget(qute.QDialog):
     This widget is used to present a user with a list of components currently
     available to them.
 
-    If that component has any pre-exposed options or requirements they will also
+    If that component has any pre-exposed options or inputs they will also
     be displayed.
     """
 
@@ -22,7 +22,7 @@ class AddComponentWidget(qute.QDialog):
         super(AddComponentWidget, self).__init__(parent)
 
         # -- We track the currently selected component in a variable, as we
-        # -- want to reflect changes in options/requirements of a component
+        # -- want to reflect changes in options/inputs of a component
         self.active_component = None
 
         # -- We store a reference to the parent we are being asked to add a component
@@ -52,7 +52,7 @@ class AddComponentWidget(qute.QDialog):
         # -- the component can give us
         self.help_info = qute.QLabel()
 
-        # -- The option panel where we will show options adn requirements
+        # -- The option panel where we will show options adn inputs
         self.options_widget = options.OptionsWidget(pre_expose_only=True)
 
         # -- Our logical buttons
@@ -98,7 +98,7 @@ class AddComponentWidget(qute.QDialog):
         """
         This will set the active component (the selected component).
 
-        When this happens, we display any options and requirements which are flagged
+        When this happens, we display any options and inputs which are flagged
         as should pre-expose themselves.
 
         Note: This does NOT add the component to the stack.
@@ -128,9 +128,9 @@ class AddComponentWidget(qute.QDialog):
                 if option.should_inherit() and self.component_parent.option(option.name()):
                     option.set(self.component_parent.option(option.name()).get())
 
-            for requirement in component.requirements():
-                if requirement.should_inherit() and self.component_parent.requirement(requirement.name()):
-                    requirement.set(self.component_parent.requirement(requirement.name()).get())
+            for input_ in component.inputs():
+                if input_.should_inherit() and self.component_parent.input(input_.name()):
+                    input_.set(self.component_parent.input(input_.name()).get())
 
         # -- Ask the option widget to update itself for this component
         self.options_widget.set_component(component)
@@ -213,11 +213,11 @@ class AddComponentWidget(qute.QDialog):
             for option in self.active_component.options():
                 user_set_options[option.name()] = option.get()
 
-        user_set_requirements = dict()
+        user_set_inputs = dict()
 
         if self.active_component:
-            for requirement in self.active_component.requirements():
-                user_set_requirements[requirement.name()] = requirement.get()
+            for input_ in self.active_component.inputs():
+                user_set_inputs[input_.name()] = input_.get()
 
         # -- Ask the stack to add a new component to the stack with those options
         # -- and requirements.
@@ -226,9 +226,8 @@ class AddComponentWidget(qute.QDialog):
             label=label,
             parent=self.component_parent,
             options=user_set_options,
-            requirements=user_set_requirements,
+            inputs=user_set_inputs,
         )
-        print(f"added component to {self.stack}")
         self.component_added.emit()
 
         # -- Close this window as the process is complete

@@ -1,5 +1,5 @@
 import os
-import qute
+from .vendor import qute
 import xstack
 
 from .config import AppConfig
@@ -17,6 +17,8 @@ class DemoAppConfig(AppConfig):
             "test",
         )
     ]
+
+    stack_class = xstack.Stack
 
 # --------------------------------------------------------------------------------------
 # noinspection PyUnresolvedReferences,PyUnusedLocal

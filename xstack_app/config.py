@@ -1,5 +1,5 @@
-import xstack
-import scribble
+
+from .vendor import scribble
 
 from . import resources
 
@@ -39,7 +39,7 @@ class AppConfig:
     # -- This is the base class of the stack. This is useful if you are inheriting
     # -- and subclassing from xstack.Stack and want to ensure that when the app
     # -- creates a new stack it creates your base class
-    stack_class = xstack.Stack
+    stack_class: "xstack.Stack" = None
 
     # -- These allow you to tailor exactly how the tree will will visually
     item_highlight_color = [255, 0, 255]

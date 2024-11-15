@@ -1,4 +1,4 @@
-import qute
+from .vendor import qute
 import functools
 import collections
 

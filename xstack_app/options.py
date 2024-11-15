@@ -1,9 +1,8 @@
-import qute
-import xstack
 import string
 import weakref
 import functools
 
+from .vendor import qute
 from . import resources
 
 
@@ -30,21 +29,21 @@ class ComponentEditor(qute.QWidget):
         self.layout().addWidget(self.tab_widget)
 
         self.options_widget = OptionsWidget()
-        self.requirements_widget = RequirementsWidget(parent=self)
+        self.inputs_widget = InputsWidget(parent=self)
         self.outputs_widget = OutputsWidget(parent=self)
 
         self.tab_widget.addTab(
-            self.requirements_widget, #requirement_scroll_area,
-            "Requirements",
+            self.inputs_widget,
+            "Inputs",
         )
 
         self.tab_widget.addTab(
-            self.options_widget, #,  #self.options_widget, #option_scroll_area,
+            self.options_widget,
             "Options"
         )
 
         self.tab_widget.addTab(
-            self.outputs_widget, #,  #self.options_widget, #option_scroll_area,
+            self.outputs_widget,
             "Outputs"
         )
 
@@ -52,21 +51,21 @@ class ComponentEditor(qute.QWidget):
             self.tab_widget.setTabVisible(i, False)
 
     # ----------------------------------------------------------------------------------
-    def set_component(self, component: xstack.Component):
+    def set_component(self, component: "xstack.Component"):
         """
-        Applies the component to the options and the requirements widgets
+        Applies the component to the options and the inputs widgets
         """
 
-        requirements_visibility = True if (component and len(component.requirements()) > 0) else False
+        inputs_visibility = True if (component and len(component.inputs()) > 0) else False
         options_visibility = True if (component and len(component.options()) > 0) else False
         outputs_visibility = True if (component and len(component.outputs()) > 0) else False
 
-        self.tab_widget.setTabVisible(0, requirements_visibility)
+        self.tab_widget.setTabVisible(0, inputs_visibility)
         self.tab_widget.setTabVisible(1, options_visibility)
         self.tab_widget.setTabVisible(2, outputs_visibility)
 
         self.options_widget.set_component(component)
-        self.requirements_widget.set_component(component)
+        self.inputs_widget.set_component(component)
         self.outputs_widget.set_component(component)
 
 
@@ -94,11 +93,15 @@ class OptionsWidget(qute.QWidget):
         self.option_layout = qute.QVBoxLayout()
         self.option_layout.setContentsMargins(10, 10, 10, 10)
 
+        self.help_text = qute.QLabel()
+        self.help_text.setWordWrap(True)
+
+        self.layout().addWidget(self.help_text)
         self.layout().addLayout(self.option_layout)
 
     # ----------------------------------------------------------------------------------
     # noinspection PyUnresolvedReferences
-    def set_component(self, component: xstack.Component or None):
+    def set_component(self, component: "xstack.Component" or None):
         """
         This sets the target component for the widget and populates the widget
         with all the options.
@@ -108,22 +111,24 @@ class OptionsWidget(qute.QWidget):
 
         # -- If we do not have a component we dont need to populate anything
         if not component:
+            self.help_text.setText("")
             return
+
+        # -- Update the help text
+        self.help_text.setText(component.documentation())
 
         group_layouts = dict()
 
         for option in component.options():
+
+            if option.hidden():
+                continue
 
             if self._pre_expose_only and not option.should_pre_expose():
                 continue
 
             # -- Get the option object
             option_widget = component.option_widget(option.name())
-
-            # -- If this option is flagged as not needing a ui implementation
-            # -- then we dont need to do anything
-            if option_widget == component.IGNORE_OPTION_FOR_UI:
-                continue
 
             # -- Get the raw value, as we want to see the address
             # -- if its an address
@@ -235,9 +240,9 @@ class OptionsWidget(qute.QWidget):
 
 # --------------------------------------------------------------------------------------
 # noinspection PyUnresolvedReferences
-class RequirementsWidget(qute.QWidget):
+class InputsWidget(qute.QWidget):
     """
-    This widget manages the display of the requirements of a component.
+    This widget manages the display of the inputs of a component.
 
     Note: This is currently largely a copy of the Options Widget, however both
     serve a unique purpose and will likely branch in the future, so they are each
@@ -246,9 +251,9 @@ class RequirementsWidget(qute.QWidget):
 
     # ----------------------------------------------------------------------------------
     def __init__(self, pre_expose_only=False, parent: qute.QWidget = None):
-        super(RequirementsWidget, self).__init__(parent=parent)
+        super(InputsWidget, self).__init__(parent=parent)
 
-        # -- This determines if we show all requirements, or only requirements that
+        # -- This determines if we show all inputs, or only inputs that
         # -- are marked as pre-expsure
         self._pre_expose_only = pre_expose_only
 
@@ -258,118 +263,123 @@ class RequirementsWidget(qute.QWidget):
             ),
         )
 
-        self.requirement_layout = qute.QVBoxLayout()
-        self.requirement_layout.setContentsMargins(10, 10, 10, 10)
+        self.inputs_layout = qute.QVBoxLayout()
+        self.inputs_layout.setContentsMargins(10, 10, 10, 10)
 
-        self.layout().addLayout(self.requirement_layout)
+        self.help_text = qute.QLabel()
+        self.help_text.setWordWrap(True)
+
+        self.layout().addWidget(self.help_text)
+        self.layout().addLayout(self.inputs_layout)
 
     # ----------------------------------------------------------------------------------
     # noinspection DuplicatedCode
-    def set_component(self, component: xstack.Component):
+    def set_component(self, component: "xstack.Component"):
         """
         This sets the target component for the widget and populates the widget
-        with all hte requirements.
+        with all hte inputs.
         """
         # -- Clear the current layout of options
-        qute.utilities.layouts.empty(self.requirement_layout)
+        qute.utilities.layouts.empty(self.inputs_layout)
 
         # -- If we do not have a component we dont need to populate anything
         if not component:
+            self.help_text.setText("")
             return
+
+        # -- Update the help text
+        self.help_text.setText(component.documentation())
 
         group_layouts = dict()
 
-        for requirement in component.requirements():
+        for input_ in component.inputs():
 
-            if self._pre_expose_only and not requirement.should_pre_expose():
+            if input_.hidden():
                 continue
 
-            # -- Get the requirement object
-            requirement_widget = component.requirement_widget(requirement.name())
-
-
-            # -- If this requirement is flagged as not needing a ui implementation
-            # -- then we dont need to do anything
-            if requirement_widget == component.IGNORE_OPTION_FOR_UI:
+            if self._pre_expose_only and not input_.should_pre_expose():
                 continue
+
+            # -- Get the input widget
+            input_widget = component.input_widget(input_.name())
 
             # -- If we were not given a widget, then as qute to derive one
             # -- for us
-            if not requirement_widget:
-                requirement_widget = qute.utilities.derive.deriveWidget(
-                    requirement.get()
+            if not input_widget:
+                input_widget = qute.utilities.derive.deriveWidget(
+                    input_.get()
                 )
 
-            if not requirement_widget:
-                print(f"Could not resolve a widget for : {requirement.name()}")
+            if not input_widget:
+                print(f"Could not resolve a widget for : {input_.name()}, {input_.get()}")
                 continue
 
-            requirement_widget.setToolTip(
-                requirement.description(),
+            input_widget.setToolTip(
+                input_.description(),
             )
 
             # -- Get the raw value. If its an address, we want to specifically
             # -- get the address back and not the resolved value
-            requirement_value = requirement.get(resolved=False)
+            input_value = input_.get(resolved=False)
 
             # -- Set the value of the widget
             qute.utilities.derive.setBlindValue(
-                requirement_widget,
-                requirement_value,
+                input_widget,
+                input_value,
             )
 
-            # -- Hook up a connection such that when this requirement ui changes we
+            # -- Hook up a connection such that when this input ui changes we
             # -- reflect that change into the component
             qute.utilities.derive.connectBlind(
-                requirement_widget,
+                input_widget,
                 functools.partial(
-                    self.reflect_requirement_change,
-                    requirement_widget,
-                    requirement.name(),
+                    self.reflect_input_change,
+                    input_widget,
+                    input_.name(),
                     component,
                 ),
             )
 
-            layout_to_add_into = self.requirement_layout
+            layout_to_add_into = self.inputs_layout
 
-            if requirement.group():
-                if requirement.group() in group_layouts:
-                    layout_to_add_into = group_layouts[requirement.group()]
+            if input_.group():
+                if input_.group() in group_layouts:
+                    layout_to_add_into = group_layouts[input_.group()]
 
                 else:
                     # -- Create the new layout
                     layout = qute.QVBoxLayout()
 
                     # -- Create the group box
-                    group_box = qute.QGroupBox(requirement.group())
+                    group_box = qute.QGroupBox(input_.group())
                     group_box.setLayout(layout)
 
                     # -- Add the group box to the main layout
-                    self.requirement_layout.addWidget(group_box)
+                    self.inputs_layout.addWidget(group_box)
 
                     # -- Store this so that we only create one instance of it
                     # -- and mark this as the layout to add the widget into
                     layout_to_add_into = layout
-                    group_layouts[requirement.group()] = layout
+                    group_layouts[input_.group()] = layout
 
-            if hasattr(requirement_widget, "HIDE_LABEL") and requirement_widget.HIDE_LABEL:
+            if hasattr(input_widget, "HIDE_LABEL") and input_widget.HIDE_LABEL:
                 # # -- Add the widget into the ui
                 layout_to_add_into.addWidget(
-                    requirement_widget,
+                    input_widget,
                 )
 
             else:
                 # # -- Add the widget into the ui
                 layout_to_add_into.addLayout(
                     qute.utilities.widgets.addLabel(
-                        requirement_widget,
-                        string.capwords(requirement.name().replace('_', ' ')),
+                        input_widget,
+                        string.capwords(input_.name().replace('_', ' ')),
                         150,
                         slim=False,
                     ),
                 )
 
-        self.requirement_layout.addSpacerItem(
+        self.inputs_layout.addSpacerItem(
             qute.QSpacerItem(
                 10,
                 0,
@@ -381,7 +391,7 @@ class RequirementsWidget(qute.QWidget):
     # ----------------------------------------------------------------------------------
     # noinspection PyUnusedLocal
     @classmethod
-    def reflect_requirement_change(cls, widget, option_name, component, *args, **kwargs):
+    def reflect_input_change(cls, widget, option_name, component, *args, **kwargs):
         """
         This is called whenever an option ui element is changed. Within this function
         we must push the changed value back into the component
@@ -396,7 +406,7 @@ class RequirementsWidget(qute.QWidget):
         Returns:
             None
         """
-        component.requirement(option_name).set(
+        component.input(option_name).set(
             qute.utilities.derive.deriveValue(
                 widget,
             ),
@@ -479,6 +489,10 @@ class OutputsWidget(qute.QWidget):
         self.output_layout = qute.QVBoxLayout()
         self.output_layout.setContentsMargins(10, 10, 10, 10)
 
+        self.help_text = qute.QLabel()
+        self.help_text.setWordWrap(True)
+
+        self.layout().addWidget(self.help_text)
         self.layout().addLayout(self.output_layout)
 
     # ----------------------------------------------------------------------------------
@@ -488,7 +502,7 @@ class OutputsWidget(qute.QWidget):
 
     # ----------------------------------------------------------------------------------
     # noinspection PyUnresolvedReferences
-    def set_component(self, component: xstack.Component):
+    def set_component(self, component: "xstack.Component"):
         """
         This sets the target component for the widget and populates the widget
         with all the options.
@@ -499,7 +513,11 @@ class OutputsWidget(qute.QWidget):
 
         # -- If we do not have a component we dont need to populate anything
         if not component:
+            self.help_text.setText("")
             return
+
+        # -- Update the help text
+        self.help_text.setText(component.documentation())
 
         group_layouts = dict()
 

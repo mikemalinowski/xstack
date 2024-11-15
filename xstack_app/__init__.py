@@ -36,6 +36,10 @@ from . import application
 from . import resources
 
 # -- Expose the demo app
-from .demo import launch_demo
+try:
+    from .demo import launch_demo
 
-__version__ = "0.1.12"
+except:
+    pass
+
+__version__ = "0.2.1"

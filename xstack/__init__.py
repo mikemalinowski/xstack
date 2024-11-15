@@ -153,4 +153,4 @@ from .component import Component
 from . import address
 from . import constants
 
-__version__ = "0.1.15"
+__version__ = "0.2.1"

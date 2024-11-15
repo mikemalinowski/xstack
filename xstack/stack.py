@@ -45,6 +45,7 @@ class Stack:
     changed(): Emitted whenever a component is added or removed or the build order
         is changed in any way.
     """
+    status = constants.Status
 
     # ----------------------------------------------------------------------------------
     def __init__(
@@ -119,13 +120,16 @@ class Stack:
         # -- Add in the components
         for uuid, component_data in data.get("components", dict()).items():
 
-            # -- Pull out the requirement and option data so we can format it in
+            # -- Pull out the inputs and option data so we can format it in
             # -- a way we can pass through
-            requirements = dict()
+            inputs = dict()
             options = dict()
 
-            for requirement_data in component_data["requirements"]:
-                requirements[requirement_data["name"]] = requirement_data["value"]
+            # -- We have switched from "requirements" to inputs. We will always save
+            # -- new data from now on using inputs, but this fallback is to allow
+            # -- us to read older data too.
+            for input_data in component_data.get("inputs", component_data.get("requirements")):
+                inputs[input_data["name"]] = input_data["value"]
 
             for option_data in component_data["options"]:
                 options[option_data["name"]] = option_data["value"]
@@ -136,7 +140,7 @@ class Stack:
             new_component = self.add_component(
                 component_data["component_type"],
                 component_data["label"],
-                requirements=requirements,
+                inputs=inputs,
                 options=options,
                 force_uuid=uuid,
                 forced_version=component_data.get("forced_version", None),
@@ -232,9 +236,9 @@ class Stack:
                     print(f"    {component_instance.label()} FAILED its is_valid test")
                     invalid_result = True
 
-                for requirement in component_instance.requirements():
-                    if requirement.requires_validation() and not requirement.validate():
-                        print(f"    {requirement.name()} for {component_instance.label()} is not set")
+                for input_ in component_instance.inputs():
+                    if input_.requires_validation() and not input_.validate():
+                        print(f"    {input_.name()} for {component_instance.label()} is not set")
                         invalid_result = True
 
                         component_instance.set_status(
@@ -299,7 +303,7 @@ class Stack:
             self,
             component_type: str,
             label: str,
-            requirements: typing.Dict = None,
+            inputs: typing.Dict = None,
             options: typing.Dict = None,
             forced_version: int or None = None,
             parent: Component = None,
@@ -311,7 +315,7 @@ class Stack:
         This will add a component of the given component type to the stack with the given
         label.
 
-        Any requirements or options passed will have those values set at the time the
+        Any inputs or options passed will have those values set at the time the
         component is added.
 
         If a parent uuid is given it will be assigned as a child of that component in
@@ -352,17 +356,13 @@ class Stack:
         # -- If we're given a parent, inherit any attributes that are flagged
         # -- as expecting inheritence
         if parent:
-            print("Testing attribute inheritence")
             for option in component_instance.options():
                 if option.should_inherit() and parent.option(option.name()):
-                    print("inheriting option")
                     option.set(parent.option(option.name()).get())
 
-            for requirement in component_instance.requirements():
-                if requirement.should_inherit() and parent.requirement(
-                        requirement.name()):
-                    print("inheriting requirement")
-                    requirement.set(parent.requirement(requirement.name()).get())
+            for input_ in component_instance.inputs():
+                if input_.should_inherit() and parent.input(input_.name()):
+                    input_.set(parent.input(input_.name()).get())
 
         # -- Set any option values we were given
         for option_name, value in (options or dict()).items():
@@ -377,15 +377,15 @@ class Stack:
                     f"option for {component_type}"
                 )
 
-        # -- Set any requirement values we were given
-        for requirement_name, value in (requirements or dict()).items():
+        # -- Set any input values we were given
+        for input_name, value in (inputs or dict()).items():
             try:
-                component_instance.requirement(requirement_name).set(value)
+                component_instance.input(input_name).set(value)
 
             except AttributeError:
                 print(
-                    f"{requirement_name} does not exist as a "
-                    f"requirement for {component_type}"
+                    f"{input_name} does not exist as a "
+                    f"input for {component_type}"
                 )
 
         # -- Whenever we have value changes, ensure we save the result
@@ -483,12 +483,12 @@ class Stack:
         Instances a new component of the desired version in place of the
         previous one.
         """
-        requirements = dict()
+        inputs = dict()
         options = dict()
 
 
-        for req in component.requirements():
-            requirements[req.name()] = req.get()
+        for input_ in component.inputs():
+            inputs[input_.name()] = input_.get()
 
         for option in component.options():
             options[option.name()] = option.get()
@@ -510,11 +510,10 @@ class Stack:
         new_component = self.add_component(
             component_type=component.identifier,
             label=component.label(),
-            requirements=requirements,
+            inputs=inputs,
             options=options,
             forced_version=version,
             force_uuid=component.uuid(),
-            # parent=parent,
         )
 
         self.set_build_position(
@@ -691,6 +690,10 @@ class Stack:
         This will serialise the stack to a dictionary, including any additional data
         you may want to stored with it, and then saved to the given filepath
         """
+
+        if not filepath or not os.path.exists(filepath):
+            print("No filepath given to save to")
+            return
 
         # -- Ensure we're fully serialised
         data = self.serialise()

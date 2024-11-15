@@ -5,7 +5,7 @@ import traceback
 
 from . import stack
 from .attributes import Option
-from .attributes import Requirement
+from .attributes import Input
 from .attributes import Output
 from .signals import Signal
 
@@ -17,8 +17,8 @@ from .constants import Status
 class Component:
     """
     A component is a an item that can be added to the stack. Typically, a component
-    will expose various options and requirements and then execute some code utilising
-    those options and requirements.
+    will expose various options and inputs and then execute some code utilising
+    those options and inputs.
 
     When implementing a component, you should subclass from this Component class and
     provide a unique identifier. Components are stored in a class factory thus the
@@ -47,12 +47,6 @@ class Component:
     # -- icon is in the same folder as your component .py:
     # -- icon = os.path.join(os.path.dirname(__file__), "my_icon_name.png")
     icon = ""
-
-    # -- Sometimes it can be useful for a widget to represent multiple options
-    # -- or requirements. In this case, if you return self.IGNORE_OPTION_FOR_UI from
-    # -- within the option_widget or requirement_widget then that option/requirement
-    # -- will not be shown in any ui
-    IGNORE_OPTION_FOR_UI = "__ignore_option_for_ui__"
 
     # ----------------------------------------------------------------------------------
     # This MUST be re-implemented
@@ -96,7 +90,7 @@ class Component:
 
     # ----------------------------------------------------------------------------------
     # You may re-implement this
-    def requirement_widget(self, requirement_name: str) -> "PySide6.QWidget":
+    def input_widget(self, requirement_name: str) -> "PySide6.QWidget":
         """
         This allows you to return a specific (or custom) QWidget to represent the
         given requirement in any ui's.
@@ -163,7 +157,7 @@ class Component:
 
         self._label: str = label
         self._uuid: str = uuid_ or str(uuid.uuid4())
-        self._requirements: typing.List[Requirement] = list()
+        self._inputs: typing.List[Input] = list()
         self._options: typing.List[Option] = list()
         self._outputs: typing.List[Output] = list()
         self._status: str = "not executed"
@@ -269,14 +263,16 @@ class Component:
         return self.identifier
 
     # ----------------------------------------------------------------------------------
-    def declare_requirement(
+    def declare_input(
             self, name: str,
             value: typing.Any = None,
             description: str = "",
             validate=True,
             group=None,
             should_inherit=False,
-            pre_expose=False
+            pre_expose=False,
+            hidden=False,
+            ui=None,
     ):
         """
         This will add a requirement to the component, which will allow a user to
@@ -304,7 +300,7 @@ class Component:
                 is to help inform ui's as to whether the user should be presented
                 with this requirement before the component is created.
         """
-        requirement = Requirement(
+        input_ = Input(
             name=name,
             value=value,
             validate=validate,
@@ -312,13 +308,15 @@ class Component:
             group=group,
             should_inherit=should_inherit,
             pre_expose=pre_expose,
+            hidden=hidden,
+            ui=ui,
             component=self,
         )
 
-        self._requirements.append(requirement)
+        self._inputs.append(input_)
 
         # -- Trickle the change event of this requirement to the component level
-        requirement.value_changed.connect(self.changed.emit)
+        input_.value_changed.connect(self.changed.emit)
 
     # ----------------------------------------------------------------------------------
     def declare_option(
@@ -328,7 +326,9 @@ class Component:
             description: str = "",
             group=None,
             should_inherit=False,
-            pre_expose=False
+            pre_expose=False,
+            hidden=False,
+            ui=None,
     ):
         """
         This will add an option to the component, which will allow a user to
@@ -360,6 +360,8 @@ class Component:
             group=group,
             should_inherit=should_inherit,
             pre_expose=pre_expose,
+            hidden=hidden,
+            ui=ui,
             component=self,
         )
 
@@ -385,20 +387,20 @@ class Component:
         self._outputs.append(output)
 
     # ----------------------------------------------------------------------------------
-    def requirements(self) -> typing.List[Requirement]:
+    def inputs(self) -> typing.List[Input]:
         """
-        Returns a list of the requirements for this component
+        Returns a list of the inputs for this component
         """
-        return self._requirements
+        return self._inputs
 
     # ----------------------------------------------------------------------------------
-    def requirement(self, name: str) -> Requirement or None:
+    def input(self, name: str) -> Input or None:
         """
-        Returns the Requirement object for the given requirement name
+        Returns the Input object for the given requirement name
         """
-        for requirement_ in self._requirements:
-            if requirement_.name() == name:
-                return requirement_
+        for input_ in self._inputs:
+            if input_.name() == name:
+                return input_
 
         return None
 
@@ -459,17 +461,17 @@ class Component:
         for option in self.options():
             print(f"        {option.name().ljust(option_len + 2, ' ')} : {self.option(option.name()).get()}")
 
-        print(f"    Requirements :")
+        print(f"    Inputs :")
 
-        requirement_len = max(
+        inputs_len = max(
             [
-                len(requirement.name())
-                for requirement in self.requirements()
+                len(input_.name())
+                for input_ in self.inputs()
             ] or [0]
         )
 
-        for requirement in self.requirements():
-            print(f"        {requirement.name().ljust(requirement_len + 2, ' ')} : {self.requirement(requirement.name()).get()}")
+        for input_ in self.inputs():
+            print(f"        {input_.name().ljust(inputs_len + 2, ' ')} : {self.input(input_.name()).get()}")
 
     # ----------------------------------------------------------------------------------
     def describe_outputs(self):
@@ -494,9 +496,9 @@ class Component:
         """
         return dict(
             component_type=self.identifier,
-            requirements=[
-                requirement.serialise()
-                for requirement in self.requirements()
+            inputs=[
+                input_.serialise()
+                for input_ in self.inputs()
             ],
             options=[
                 option.serialise()
@@ -530,7 +532,7 @@ class Component:
     def load_settings(self, filepath):
         """
         This will load a json file of settings and attempt to set its own
-        requirements and options based on that data
+        inputs and options based on that data
 
         Args:
             filepath: Aboslute filepath to the settings file to load
@@ -538,12 +540,14 @@ class Component:
         with open(filepath, "r") as f:
             data = json.load(f)
 
-        for requirement_data in data.get("requirements", list()):
+        # -- Backward compat with old format of inputs. Note that all
+        # -- serialisation is done with inputs, not inputs.
+        for input_data in data.get("inputs", list()):
 
-            name = requirement_data["name"]
-            value = requirement_data["value"]
+            name = input_data["name"]
+            value = input_data["value"]
 
-            self.requirement(name).set(value)
+            self.input(name).set(value)
 
         for option_data in data.get("options", list()):
 
@@ -596,12 +600,12 @@ class Component:
         Returns:
 
         """
-        for requirement in self.requirements():
-            requirement_to_copy = other_component.requirement(requirement.name())
+        for input_ in self.inputs():
+            input_to_copy = other_component.inputs(input_.name())
 
-            if requirement_to_copy:
-                self.requirement(requirement.name()).set(
-                    requirement_to_copy.get(resolved=False),
+            if input_to_copy:
+                self.input(input_.name()).set(
+                    input_to_copy.get(resolved=False),
                 )
 
         for option in self.options():
@@ -639,3 +643,20 @@ class Component:
         If no version is defined, then None will be returned.
         """
         return self._forced_version
+
+    # ----------------------------------------------------------------------------------
+    def documentation(self):
+        if not self.__doc__:
+            return ""
+
+        lines = []
+
+        for line in self.__doc__.split("\n"):
+            line = line.strip()
+
+            if not line:
+                line = "\n"
+
+            lines.append(line)
+
+        return " ".join(lines)

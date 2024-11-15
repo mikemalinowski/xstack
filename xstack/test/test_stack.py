@@ -216,7 +216,7 @@ class TestUnitStack(unittest.TestCase):
 
         self.assertFalse(result)
 
-    def test_valid_requirement(self):
+    def test_valid_input(self):
 
         stack = xstack.Stack(
             component_paths=[COMPONENT_PATH],
@@ -224,7 +224,7 @@ class TestUnitStack(unittest.TestCase):
 
         component = stack.add_component(label="", component_type="ComponentWithExpectedRequirementNotSet")
 
-        component.requirement("expected_requirement").set(True)
+        component.input("expected_requirement").set(True)
 
         result = stack.build()
 

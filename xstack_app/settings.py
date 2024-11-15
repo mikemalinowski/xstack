@@ -1,7 +1,7 @@
-import qute
 import string
 import functools
 
+from .vendor import qute
 from . import resources
 
 

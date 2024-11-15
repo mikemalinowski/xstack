@@ -1,5 +1,4 @@
-import qute
-import xstack
+from .vendor import qute
 import typing
 import functools
 
@@ -83,7 +82,7 @@ class AppWidget(qute.QWidget):
         return list()
     
     # ----------------------------------------------------------------------------------
-    def set_active_stack(self, stack: xstack.Stack or None):
+    def set_active_stack(self, stack: "xstack.Stack" or None):
         """
         This function will rebuild the layout of the tool based on the stack we expect
         to be showing as the currently active stack

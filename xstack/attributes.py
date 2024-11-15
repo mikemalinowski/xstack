@@ -21,6 +21,8 @@ class _Attribute:
             group: str = "",
             should_inherit: bool = False,
             pre_expose: bool = False,
+            ui=None,
+            hidden: bool = False,
             component=None,
     ):
         super(_Attribute, self).__init__()
@@ -32,6 +34,7 @@ class _Attribute:
         self._should_inherit: bool = should_inherit
         self._component = component
         self._pre_expose: bool = pre_expose
+        self._hidden: bool = hidden
 
         # -- Declare our signals which allow events to tie into them
         self.value_changed = Signal()
@@ -107,6 +110,11 @@ class _Attribute:
         if address.is_address(self._value):
             return True
 
+    # ----------------------------------------------------------------------------------
+    def hidden(self):
+        return self._hidden
+
+
 # --------------------------------------------------------------------------------------
 class Option(_Attribute):
 
@@ -122,11 +130,11 @@ class Option(_Attribute):
         )
 
 # --------------------------------------------------------------------------------------
-class Requirement(_Attribute):
+class Input(_Attribute):
 
     # ----------------------------------------------------------------------------------
     def __init__(self, validate, *args, **kwargs):
-        super(Requirement, self).__init__(*args, **kwargs)
+        super(Input, self).__init__(*args, **kwargs)
 
         self._validate = validate
 

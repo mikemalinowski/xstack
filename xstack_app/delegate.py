@@ -1,6 +1,5 @@
 import os
-import qute
-import xstack
+from .vendor import qute
 
 from . import resources
 
@@ -16,7 +15,7 @@ class ComponentItemDelegate(qute.QStyledItemDelegate):
     STATUS_WIDTH = 10
 
     # ----------------------------------------------------------------------------------
-    def __init__(self, stack: xstack.Stack, app_config, parent=None):
+    def __init__(self, stack: "xstack.Stack", app_config, parent=None):
         super(ComponentItemDelegate, self).__init__(parent)
 
         # -- When we instance this class, we need to construct all our brushes
@@ -29,7 +28,7 @@ class ComponentItemDelegate(qute.QStyledItemDelegate):
         )
 
         self.app_config = app_config
-        self.stack: xstack.Stack = stack
+        self.stack: "xstack.Stack" = stack
 
         self.item_size = self.app_config.item_size
         self.border_pen = qute.QPen(qute.QColor(*self.app_config.border_color))
@@ -63,16 +62,16 @@ class ComponentItemDelegate(qute.QStyledItemDelegate):
         """
         status = component.status()
 
-        if status == xstack.constants.Status.Success:
+        if status == self.stack.status.Success:
             status_color = self.success_brush
 
-        elif status == xstack.constants.Status.Failed:
+        elif status == self.stack.status.Failed:
             status_color = self.failed_brush
 
-        elif status == xstack.constants.Status.Invalid:
+        elif status == self.stack.status.Invalid:
             status_color = self.invalid_brush
 
-        elif status == xstack.constants.Status.Disabled:
+        elif status == self.stack.status.Disabled:
             status_color = self.disabled_brush
 
         else:

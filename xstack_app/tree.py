@@ -1,5 +1,4 @@
-import qute
-import xstack
+from .vendor import qute
 import typing
 import traceback
 import collections
@@ -18,7 +17,7 @@ class BuildTreeWidget(qute.QTreeWidget):
     """
 
     # ----------------------------------------------------------------------------------
-    def __init__(self, stack: xstack.Stack, app_config, parent: qute.QWidget = None):
+    def __init__(self, stack: "xstack.Stack", app_config, parent: qute.QWidget = None):
         super(BuildTreeWidget, self).__init__(parent=parent)
 
         self.app_config = app_config
@@ -48,7 +47,7 @@ class BuildTreeWidget(qute.QTreeWidget):
         )
 
         # -- Store a reference to the stack
-        self.stack: xstack.Stack = stack
+        self.stack: "xstack.Stack" = stack
 
         # -- Store a reference to the root item
         self._root_item = None
@@ -116,7 +115,7 @@ class BuildTreeWidget(qute.QTreeWidget):
             )
 
     # ----------------------------------------------------------------------------------
-    def current_component(self) -> xstack.Component or None:
+    def current_component(self) -> "xstack.Component" or None:
         """
         Returns the component for the currently active item
         """
@@ -176,7 +175,7 @@ class BuildTreeWidget(qute.QTreeWidget):
 
     # ----------------------------------------------------------------------------------
     @classmethod
-    def _create_item(cls, component: xstack.Component) -> qute.QTreeWidgetItem:
+    def _create_item(cls, component: "xstack.Component") -> qute.QTreeWidgetItem:
         """
         This is a convenience function for create a consistent item in the tree view
         """
