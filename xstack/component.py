@@ -2,12 +2,12 @@ import uuid
 import json
 import typing
 import traceback
+import signalling
 
 from . import stack
 from .attributes import Option
 from .attributes import Input
 from .attributes import Output
-from .signals import Signal
 
 from .constants import Status
 
@@ -166,9 +166,9 @@ class Component:
 
         # -- Declare our signals so that other mechanisms can tie into the events
         # -- of our component
-        self.build_started = Signal()
-        self.build_complete = Signal()
-        self.changed = Signal()
+        self.build_started = signalling.Signal()
+        self.build_complete = signalling.Signal()
+        self.changed = signalling.Signal()
 
     # ----------------------------------------------------------------------------------
     def wrapped_run(self) -> bool:
@@ -272,7 +272,6 @@ class Component:
             should_inherit=False,
             pre_expose=False,
             hidden=False,
-            ui=None,
     ):
         """
         This will add a requirement to the component, which will allow a user to
@@ -299,6 +298,8 @@ class Component:
             pre_expose (bool): Whether or not the requirement should be exposed. This
                 is to help inform ui's as to whether the user should be presented
                 with this requirement before the component is created.
+
+            hidden (bool): Whether or not the requirement should be hidden.
         """
         input_ = Input(
             name=name,
@@ -309,7 +310,6 @@ class Component:
             should_inherit=should_inherit,
             pre_expose=pre_expose,
             hidden=hidden,
-            ui=ui,
             component=self,
         )
 
@@ -328,7 +328,6 @@ class Component:
             should_inherit=False,
             pre_expose=False,
             hidden=False,
-            ui=None,
     ):
         """
         This will add an option to the component, which will allow a user to
@@ -352,6 +351,8 @@ class Component:
             pre_expose (bool): Whether or not the option should be exposed. This
                 is to help inform ui's as to whether the user should be presented
                 with this option before the component is created.
+
+            hidden (bool): Whether or not the option should be hidden.
         """
         option = Option(
             name=name,
@@ -361,7 +362,6 @@ class Component:
             should_inherit=should_inherit,
             pre_expose=pre_expose,
             hidden=hidden,
-            ui=ui,
             component=self,
         )
 
@@ -601,7 +601,7 @@ class Component:
 
         """
         for input_ in self.inputs():
-            input_to_copy = other_component.inputs(input_.name())
+            input_to_copy = other_component.input(input_.name())
 
             if input_to_copy:
                 self.input(input_.name()).set(

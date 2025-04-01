@@ -4,6 +4,12 @@
 xstack is an execution framework which allows a developer to define components which 
 can then be added to the stack - declaring options, requirements and outputs. 
 
+## Installing
+
+You can install xstack using `pip install xstack`
+
+## Getting Started
+
 The stack can be executed to run sequentially from top to bottom, from a specific
 point, to a specific point or individiaully. 
 
@@ -94,32 +100,4 @@ class MyXStackComponent(xstack.Component):
     def run(self):
         return self.option("test_option").get() == "bar"
 
-```
-
-# xstack_app
-
-The app is not a requirement for using xstack, but can be used as a front end to build
-and execute stacks. 
-
-![xstack Image](xstack_app/_res/xstack_demo.png)
-
-This app has a reliance on the following two modules which can be found here:
-
-* https://github.com/mikemalinowski/qute
-* https://github.com/mikemalinowski/scribble
-
-You can run the app using
-
-```python
-import xstack_app
-
-xstack_app.launch(blocking=True)
-```
-
-If you want to run it with some example components, you can run:
-
-```python
-import xstack_app
-
-xstack_app.launch_demo(blocking=True)
 ```

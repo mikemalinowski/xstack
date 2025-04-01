@@ -27,7 +27,7 @@ class TestUnitStack(unittest.TestCase):
         )
 
         self.assertGreater(
-            len(stack.component_library.items()),
+            len(stack.component_library.plugins()),
             0,
         )
 
@@ -73,7 +73,7 @@ class TestUnitStack(unittest.TestCase):
             component_paths=[COMPONENT_PATH],
         )
 
-        test_component = stack.component_library.get("RunTestComponent")
+        test_component = stack.component_library.request("RunTestComponent")
         test_component.RUN_ORDER = []
 
         component = stack.add_component(
@@ -94,7 +94,7 @@ class TestUnitStack(unittest.TestCase):
             component_paths=[COMPONENT_PATH],
         )
 
-        test_component = stack.component_library.get("RunTestComponent")
+        test_component = stack.component_library.request("RunTestComponent")
         test_component.RUN_ORDER = []
 
         component_a = stack.add_component(
@@ -125,7 +125,7 @@ class TestUnitStack(unittest.TestCase):
             component_paths=[COMPONENT_PATH],
         )
 
-        test_component = stack.component_library.get("RunTestComponent")
+        test_component = stack.component_library.request("RunTestComponent")
         test_component.RUN_ORDER = []
 
         component_a = stack.add_component(
@@ -162,7 +162,7 @@ class TestUnitStack(unittest.TestCase):
             component_paths=[COMPONENT_PATH],
         )
 
-        test_component = stack.component_library.get("RunTestComponent")
+        test_component = stack.component_library.request("RunTestComponent")
         test_component.RUN_ORDER = []
 
         component_a = stack.add_component(

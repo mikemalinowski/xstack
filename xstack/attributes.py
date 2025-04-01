@@ -1,8 +1,7 @@
-import re
 import typing
+import signalling
 
 from . import address
-from .signals import Signal
 
 
 # --------------------------------------------------------------------------------------
@@ -21,7 +20,6 @@ class _Attribute:
             group: str = "",
             should_inherit: bool = False,
             pre_expose: bool = False,
-            ui=None,
             hidden: bool = False,
             component=None,
     ):
@@ -37,7 +35,7 @@ class _Attribute:
         self._hidden: bool = hidden
 
         # -- Declare our signals which allow events to tie into them
-        self.value_changed = Signal()
+        self.value_changed = signalling.Signal()
 
     # ----------------------------------------------------------------------------------
     def name(self) -> str:

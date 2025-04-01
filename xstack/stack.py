@@ -3,15 +3,14 @@ import json
 import typing
 import functools
 import traceback
+import factories
+import signalling
 
 from . import constants
 from . import address
 
 from .constants import Status
 from .component import Component
-from .signals import Signal
-
-from .vendor import abstract_factories
 
 
 # --------------------------------------------------------------------------------------
@@ -77,13 +76,13 @@ class Stack:
 
         # -- Declare our signals. These are useful for other classes
         # -- to bind into
-        self.component_added = Signal()
-        self.component_removed = Signal()
-        self.build_order_changed = Signal()
-        self.changed = Signal()
+        self.component_added = signalling.Signal()
+        self.component_removed = signalling.Signal()
+        self.build_order_changed = signalling.Signal()
+        self.changed = signalling.Signal()
 
-        self.build_started = Signal()
-        self.build_completed = Signal()
+        self.build_started = signalling.Signal()
+        self.build_completed = signalling.Signal()
 
     # ----------------------------------------------------------------------------------
     def serialise(self) -> typing.Dict:
@@ -328,7 +327,7 @@ class Stack:
         """
 
         # -- Check we can access this component type
-        if component_type not in self.component_library.names():
+        if component_type not in self.component_library.identifiers():
             print(f"{component_type} is not recognised")
             return None
 
@@ -336,7 +335,7 @@ class Stack:
         # -- this, we wrap it in a broad exception test
         # noinspection PyBroadException
         try:
-            component_instance: Component = self.component_library.get(
+            component_instance: Component = self.component_library.request(
                 component_type,
                 version=forced_version,
             )(
@@ -412,6 +411,12 @@ class Stack:
         self.changed.emit()
 
         return component_instance
+
+    def set_parent(self, component, parent):
+        pass
+
+    def add_child(self, parent, child):
+        pass
 
     # ----------------------------------------------------------------------------------
     def get_parent(self, component):
@@ -574,6 +579,8 @@ class Stack:
         self.build_order_changed.emit()
         self.changed.emit()
 
+        print(json.dumps(self._build_order, indent=4))
+
     # ----------------------------------------------------------------------------------
     def remove_component(self, component: Component) -> bool:
         """
@@ -667,6 +674,10 @@ class Stack:
         :return:
         """
         if isinstance(data, str):
+            if not data or not os.path.exists(data):
+                print("%s does not exist" % data)
+                return
+
             with open(data, "r") as f:
                 data = json.load(f)
 
@@ -691,7 +702,7 @@ class Stack:
         you may want to stored with it, and then saved to the given filepath
         """
 
-        if not filepath or not os.path.exists(filepath):
+        if not filepath:
             print("No filepath given to save to")
             return
 
@@ -846,7 +857,7 @@ class Stack:
 
     # --------------------------------------------------------------------------------------
     @functools.cached_property
-    def component_library(self) -> abstract_factories.AbstractTypeFactory:
+    def component_library(self) -> factories.Factory:
         """
         This will return a factory class giving access to all the available components.
 
@@ -870,12 +881,11 @@ class Stack:
         ]
 
         # -- Instance the factory
-        lib = abstract_factories.AbstractTypeFactory(
+        lib = factories.Factory(
             abstract=self.component_base_class,
             paths=paths,
-            name_key="identifier",
-            version_key="version",
-            unique_items_only=True,
+            plugin_identifier="identifier",
+            versioning_identifier="version",
         )
 
         return lib

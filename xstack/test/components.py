@@ -93,7 +93,7 @@ class ComponentWithExpectedRequirementNotSet(xstack.Component):
 
         self.declare_input(
             name="expected_requirement",
-            value=None,
+            value="",
             validate=True,
         )
 
