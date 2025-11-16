@@ -82,6 +82,7 @@ class Stack:
         self.changed = signalling.Signal()
 
         self.build_started = signalling.Signal()
+        self.build_progressed = signalling.Signal()
         self.build_completed = signalling.Signal()
 
     # ----------------------------------------------------------------------------------
@@ -262,7 +263,12 @@ class Stack:
             return not invalid_result
 
         # -- We now re-cycle over the build order but this time we will trigger the build
-        for uuid_ in build_order:
+        uuid_count = len(build_order)
+        for idx, uuid_ in enumerate(build_order):
+
+            # -- Emit a progression signal
+            percentage = (float(idx) / uuid_count) * 100
+            self.build_progressed.emit(percentage)
 
             # -- Get the component for the given uuid
             component_instance = self._components.get(uuid_)
@@ -293,6 +299,7 @@ class Stack:
 
         # -- Emit our completion
         print("Build Succeeded.")
+        self.build_progressed.emit(100)
         self.build_completed.emit()
 
         return True
