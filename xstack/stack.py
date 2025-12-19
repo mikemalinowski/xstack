@@ -85,6 +85,12 @@ class Stack:
         self.build_progressed = signalling.Signal()
         self.build_completed = signalling.Signal()
 
+    def component_data(self):
+        """
+        Returns the raw component data
+        """
+        return self._components
+
     # ----------------------------------------------------------------------------------
     def serialise(self) -> typing.Dict:
         """
@@ -568,6 +574,7 @@ class Stack:
             removed_component_data = {
                 "uuid": component.uuid(),
                 "label": component.label(),
+                "type": component.identifier,
                 "children": [],
             }
 
@@ -585,8 +592,6 @@ class Stack:
         # -- Emit the fact that the builder order has changed
         self.build_order_changed.emit()
         self.changed.emit()
-
-        print(json.dumps(self._build_order, indent=4))
 
     # ----------------------------------------------------------------------------------
     def remove_component(self, component: Component) -> bool:
