@@ -1,2 +1,5 @@
 factories
 signalling
+scribble
+Qt.py
+qtility
