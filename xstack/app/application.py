@@ -320,6 +320,14 @@ class AppWidget(QtWidgets.QWidget):
             else:
                 force_horizontal = True
 
+        if self.app_config.forced_orientation == "vertical":
+            force_vertical = True
+            force_horizontal = False
+
+        if self.app_config.forced_orientation == "horizontal":
+            force_vertical = False
+            force_horizontal = True
+
         widget_is_wide = self.rect().width() > self.rect().height()
         use_horizontal_alignment = widget_is_wide
 
