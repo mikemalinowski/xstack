@@ -1,4 +1,5 @@
 import os
+import copy
 import json
 import typing
 import functools
@@ -164,7 +165,8 @@ class Stack:
                 new_component.set_enabled(False)
 
         # -- Pull out any stored build order data
-        self._build_order = data.get("build_order", list())
+        self._build_order = copy.deepcopy(data.get("build_order", list()))
+
 
     # ----------------------------------------------------------------------------------
     # noinspection PyBroadException
