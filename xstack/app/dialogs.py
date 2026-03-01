@@ -240,3 +240,152 @@ class AddComponentWidget(QtWidgets.QDialog):
         Triggered when the user cancels
         """
         self.window().close()
+
+
+# --------------------------------------------------------------------------------------
+# noinspection PyUnresolvedReferences
+class SwitchComponentTypeDialog(QtWidgets.QDialog):
+    """
+    This widget is used to present a user with a list of components currently
+    available to them.
+
+    If that component has any pre-exposed options or inputs they will also
+    be displayed.
+    """
+
+    # -- This signal is used to track when a component is added to the stack
+    component_switched = QtCore.Signal()
+
+    # ----------------------------------------------------------------------------------
+    def __init__(self, component, app_config, parent=None):
+        super(SwitchComponentTypeDialog, self).__init__(parent)
+
+        self.component = component
+        self.app_config = app_config
+        self.stack = component.stack
+        self.active_component_type = None
+
+        # -- Now we can start building our ui
+        self.setLayout(QtWidgets.QVBoxLayout())
+
+        # -- The search filter allows the user to restrict
+        # -- what they see in the list
+        self.search_filter = QtWidgets.QLineEdit()
+        self.search_filter.setPlaceholderText("Search Filter")
+
+        # -- This is the widget where we will show the user all the
+        # -- available components
+        self.component_list = QtWidgets.QListWidget()
+
+        # -- Our logical buttons
+        self.switch_button = QtWidgets.QPushButton('Switch')
+        self.cancel_button = QtWidgets.QPushButton('Cancel')
+
+        # -- The help info is where we show the user any information
+        # -- the component can give us
+        self.help_info = QtWidgets.QLabel()
+
+        # -- Add our items to our layout
+        self.layout().addWidget(self.search_filter)
+        self.layout().addWidget(self.component_list)
+        self.layout().addWidget(self.help_info)
+
+        # -- Add a horizontal layout for the buttons
+        h_layout = QtWidgets.QHBoxLayout()
+        h_layout.addWidget(self.switch_button)
+        h_layout.addWidget(self.cancel_button)
+        self.layout().addLayout(h_layout)
+
+        # -- Pre-populate the list
+        self.populate()
+
+        # -- Ensure that we re-populate whenever the user
+        # -- updates the search filter
+        self.search_filter.textChanged.connect(self.populate)
+        self.switch_button.clicked.connect(self.switch_component)
+        self.cancel_button.clicked.connect(self.cancel)
+        self.component_list.itemClicked.connect(self.set_component)
+
+        # -- Set modality
+        self.setWindowModality(QtCore.Qt.WindowModal)
+
+        # -- Set our window branding
+        self.setWindowTitle(f"Switch {self.app_config.component_label}")
+
+        self.setWindowIcon(
+            QtGui.QIcon(
+                self.app_config.icon,
+            ),
+        )
+
+    # ----------------------------------------------------------------------------------
+    def set_component(self):
+
+        # -- Get the current item
+        item = self.component_list.currentItem()
+
+        # -- Reset the help text
+        self.help_info.setText("")
+
+        # -- If there is no item, clear the options and do nothing else.
+        if not item:
+            self.active_component_type = None
+            return
+
+        # -- Get a component class
+        component = self.stack.component_library.request(item.text())
+
+        # -- If there is a doc string for this component, show that as help text
+        if component.__doc__:
+            self.help_info.setText(component.__doc__.strip())
+
+        self.active_component_type = item.text()
+
+    # ----------------------------------------------------------------------------------
+    def populate(self):
+        """
+        This will re-populate the list of components available to the user
+        """
+        # -- Clear the current list
+        self.component_list.clear()
+
+        # -- We allow the user to filter the list, so get their current filter text
+        search_text = self.search_filter.text().lower()
+
+        # -- Cycle all the components available
+        for component_type in sorted(self.stack.component_library.identifiers()):
+
+            # -- If we're given a filter, and this does not match, then
+            # -- skip it
+            if search_text and search_text not in component_type.lower():
+                continue
+
+            # -- Request the component
+            component = self.stack.component_library.request(component_type)
+
+            # -- Add a widget item which also shows the icon
+            item = QtWidgets.QListWidgetItem(
+                QtGui.QIcon(
+                    component.icon or self.app_config.component_icon,
+                ),
+                component_type,
+            )
+
+            # -- Add the item
+            self.component_list.addItem(item)
+
+    # ----------------------------------------------------------------------------------
+    def switch_component(self):
+        self.stack.replace_component(
+            component=self.component,
+            new_component_type=self.active_component_type,
+        )
+        # -- Close this window as the process is complete
+        self.window().close()
+
+    # ----------------------------------------------------------------------------------
+    def cancel(self):
+        """
+        Triggered when the user cancels
+        """
+        self.window().close()
