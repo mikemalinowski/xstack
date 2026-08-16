@@ -305,6 +305,38 @@ class BuildTreeWidget(QtWidgets.QTreeWidget):
         item.component.duplicate()
 
     # ----------------------------------------------------------------------------------
+    def search_and_replace_component(self, item):
+        print("search and replace for %s" % item.component)
+
+        search_for = qtility.request.text(
+            title="Search For",
+            message=(
+                "Give the text you want to search for. Note that this will be converted "
+                "to a regular expression."
+            ),
+            text="",
+        )
+
+        if not search_for:
+            return None
+
+        replace_with = qtility.request.text(
+            title="Replace With",
+            message=(
+                "Give the text you want to replace with."
+            ),
+            text="",
+        )
+
+        if not replace_with:
+            return None
+
+        item.component.search_and_replace(
+            search_for=search_for,
+            replace_with=replace_with,
+        )
+
+    # ----------------------------------------------------------------------------------
     def help_for_component(self, item):
         item.component.help()
 
