@@ -10,7 +10,7 @@ else:
 
 setuptools.setup(
     name='xstack',
-    version='1.0.1',
+    version='2.0.2',
     author='Mike Malinowski',
     author_email='mike.external@outlook.com',
     description='xstack is an execution framework',
