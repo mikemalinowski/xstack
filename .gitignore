@@ -1,0 +1,14 @@
+# Build output
+build/
+dist/
+*.egg-info/
+
+# IDE
+.idea/
+
+# Local deploy script
+build_and_deploy.bat
+
+# Python cache
+__pycache__/
+*.py[cod]

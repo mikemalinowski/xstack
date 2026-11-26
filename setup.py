@@ -10,7 +10,7 @@ else:
 
 setuptools.setup(
     name='xstack',
-    version='2.0.2',
+    version='2.0.3',
     author='Mike Malinowski',
     author_email='mike.external@outlook.com',
     description='xstack is an execution framework',
@@ -18,6 +18,9 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/mikemalinowski/xstack',
     packages=setuptools.find_packages(),
+    package_data={
+        "xstack.app": ["_res/*"],
+    },
     classifiers=[
         'Programming Language :: Python',
         'License :: OSI Approved :: MIT License',
